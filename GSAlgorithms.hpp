@@ -171,7 +171,7 @@ void k_skyline(std::vector<std::vector<Type>>& data,
         }
     }
     #ifdef DEBUG
-    std::cout << (duplicate.size() > 0 ? "No Duplicate" : "Has Duplicate") << std::endl;
+    std::cout << (duplicate.size() > 0 ? "Has Duplicate" : "No Duplicate") << ". ";
     std::cout << "Data size (" << length << ") = " << data_idx << std::endl;
     #endif
     // resize skylines
@@ -311,61 +311,65 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
     ISETS& groups, sint k) {
     // pre-processing
     sint sky_k = pre_processing(data, skylines, graph, groups, k);
+    int layer, posit, lp_elem;
+    bool flag;
+    sint p, sets_size, layer_size;
     // next processing
     // initiate groups size == 1
     ISETS pre;
     IMAP pre_status;
     ISETS pre_children;
-    for (sint i = 1; i <= skylines[0][0]; ++ i) {
-        int l0_elem = skylines[0][i];
-        pre.push_back({ l0_elem });
-        pre_status.push_back({0, (int)i});
-        std::unordered_set<int> a_set( graph.children[l0_elem] );
-        pre_children.push_back( a_set );
+    layer_size = skylines[0][0];
+    for (sint i = 1; i <= layer_size; ++ i) {
+        lp_elem = skylines[0][i];
+        pre.push_back({ lp_elem });
+        pre_status.push_back({ 0, (int)i });
+        pre_children.push_back( graph.children[lp_elem] );
     }
     // references
     ISETS* ref_pre = &pre;
     IMAP* ref_prestatus = &pre_status;
     ISETS* ref_prechild = &pre_children;
 
-    int layer, posit, lp_elem;
-    bool flag;
-    sint p, sets_size;
+    ISETS curs[k - 2];
+    IMAP statuss[k - 2];
+    ISETS childrens[k - 2];
     for (sint i = 1; i < k - 1; ++ i) {
-        ISETS cur;
-        IMAP cur_status;
-        ISETS cur_children;
+        ISETS* cur = &curs[i - 1];
+        IMAP* cur_status = &statuss[i - 1];
+        ISETS* cur_children = &childrens[i - 1];
         sets_size = (*ref_pre).size();
         for (sint j = 0; j < sets_size; ++ j) { // select a group (i) ref_pre[j]
             layer = (*ref_prestatus)[j][0];
             posit = (*ref_prestatus)[j][1];
             // at layer
-            for (p = posit + 1; p <= skylines[layer][0]; ++ p) {
+            layer_size = skylines[layer][0];
+            for (p = posit + 1; p <= layer_size; ++ p) {
                 lp_elem = skylines[layer][p];
                 if ((*ref_prechild)[j].size() > 0 &&
-                (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end()) { // not in children set
+                    (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end() &&
+                    layer > 0) { // not in children set or in skyline
                     continue;
                 }
                 flag = true;
-                for (auto& anc : graph.parents[lp_elem]) {
+                for (auto& anc : graph.parents[lp_elem]) {  // verify group (i+1), all its parents in it
                     if ((*ref_pre)[j].find(anc) == (*ref_pre)[j].end()) {
                         flag = false;
                         break;
                     }
                 }
                 if (flag) {
-                    std::unordered_set<int> cand = (*ref_pre)[j];
-                    cand.insert(lp_elem);
-                    cur.push_back(cand);
-                    cur_status.push_back({ layer, (int)p });
-                    std::unordered_set<int> a_set((*ref_prechild)[j]);
-                    a_set.insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
-                    cur_children.push_back(a_set);
+                    (*cur).push_back((*ref_pre)[j]);
+                    (*cur)[(*cur).size() - 1].insert(lp_elem);
+                    (*cur_status).push_back({ layer, (int)p });
+                    (*cur_children).push_back((*ref_prechild)[j]);
+                    (*cur_children)[(*cur_children).size() - 1].insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
                 }
             }
             // at layer + 1 or not
             if (++ layer < sky_k) {
-                for (p = 1; p < skylines[layer][0]; ++ p) {
+                layer_size = skylines[layer][0];
+                for (p = 1; p <= layer_size; ++ p) {
                     lp_elem = skylines[layer][p];
                     if ((*ref_prechild)[j].size() > 0 &&
                         (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end()) {
@@ -379,20 +383,18 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
                         }
                     }
                     if (flag) {
-                        std::unordered_set<int> cand = (*ref_pre)[j];
-                        cand.insert(lp_elem);
-                        cur.push_back(cand);
-                        cur_status.push_back({ layer, (int)p });
-                        std::unordered_set<int> a_set((*ref_prechild)[j]);
-                        a_set.insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
-                        cur_children.push_back(a_set);
+                        (*cur).push_back((*ref_pre)[j]);
+                        (*cur)[(*cur).size() - 1].insert(lp_elem);
+                        (*cur_status).push_back({ layer, (int)p });
+                        (*cur_children).push_back((*ref_prechild)[j]);
+                        (*cur_children)[(*cur_children).size() - 1].insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
                     }
                 }
             }
         }
-        ref_pre = &cur;
-        ref_prestatus = &cur_status;
-        ref_prechild = &cur_children;
+        ref_pre = cur;
+        ref_prestatus = cur_status;
+        ref_prechild = cur_children;
     }
     // generate groups (k)
     sets_size = (*ref_pre).size();
@@ -400,10 +402,11 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
         layer = (*ref_prestatus)[j][0];
         posit = (*ref_prestatus)[j][1];
         // at layer
-        for (p = posit + 1; p <= skylines[layer][0]; ++ p) {
+        layer_size = skylines[layer][0];
+        for (p = posit + 1; p <= layer_size; ++ p) {
             lp_elem = skylines[layer][p];
             if ((*ref_prechild)[j].size() > 0 &&
-            (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end()) { // not in children set
+                (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end()) { // not in children set
                 continue;
             }
             flag = true;
@@ -414,14 +417,14 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
                 }
             }
             if (flag) {
-                std::unordered_set<int> cand = (*ref_pre)[j];
-                cand.insert(lp_elem);
-                groups.push_back(cand);
+                groups.push_back((*ref_pre)[j]);
+                groups[groups.size() - 1].insert(lp_elem);
             }
         }
         // at layer + 1
         if (++ layer < sky_k) {
-            for (p = 1; p < skylines[layer][0]; ++ p) {
+            layer_size = skylines[layer][0];
+            for (p = 1; p <= layer_size; ++ p) {
                 lp_elem = skylines[layer][p];
                 if ((*ref_prechild)[j].size() > 0 &&
                     (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end()) {
@@ -435,9 +438,8 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
                     }
                 }
                 if (flag) {
-                    std::unordered_set<int> cand = (*ref_pre)[j];
-                    cand.insert(lp_elem);
-                    groups.push_back(cand);
+                    groups.push_back((*ref_pre)[j]);
+                    groups[groups.size() - 1].insert(lp_elem);
                 }
             }
         }

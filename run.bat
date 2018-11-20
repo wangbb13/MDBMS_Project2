@@ -1,5 +1,6 @@
 @echo off
-set name=anti
+rem name optinal: corr, inde, anti
+set name=inde
 
 .\main .\datasets\%name%_2.txt .\results\%name%_2_g0.txt 3 0
 .\main .\datasets\%name%_2.txt .\results\%name%_2_g1.txt 3 1

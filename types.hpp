@@ -5,6 +5,9 @@
 #include <vector>
 #include <queue>
 
+#define _max_(a, b) ((a) > (b) ? (a) : (b))
+#define _min_(a, b) ((a) < (b) ? (a) : (b))
+
 typedef std::unordered_map<int, std::vector<int>> ADJ;
 
 typedef std::vector<std::vector<int>> IMAP;

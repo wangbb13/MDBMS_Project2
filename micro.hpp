@@ -8,6 +8,6 @@
 
 #define DBG_PP_
 
-#define DBG_PW_
+#define DBG_PW
 
 #define DBG_UGW_

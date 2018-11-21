@@ -300,6 +300,64 @@ sint pre_processing(std::vector<std::vector<Type>>& data,
 }
 
 /*
+ * Input:  as below
+ * Output: as below
+ * Return: last skyline
+ */
+template <typename Type>
+sint _pre_processing_(std::vector<std::vector<Type>>& data, 
+    IMAP& skylines, DSG& graph,
+    AnsGroups& groups, sint k) {
+    sint ans = skylines.size();
+    sint sky_k = ans;
+    int ij_elem, ij_size, temp, layer_size;
+    #ifdef DBG_PP
+    std::cout << "[Function Pre_Processing]" << std::endl;
+    #endif
+    for (sint i = 1; i < sky_k; ++ i) {
+        layer_size = skylines[i][0];
+        for (sint j = 1; j > 0 && j <= layer_size; ++ j) {
+            ij_elem = skylines[i][j];
+            ij_size = graph.parents[ij_elem].size() + 1;
+            if (ij_size >= k) {
+                temp = skylines[i][j];
+                skylines[i][j] = skylines[i][layer_size];
+                skylines[i][layer_size] = temp;
+                layer_size --;
+                j --;
+                if (ij_size == k) {
+                    std::unordered_set<int> lucky = graph.parents[ij_elem];
+                    lucky.insert(ij_elem);
+                    groups.push_back(lucky);
+                    #ifdef DBG_PP
+                    std::cout << "lucky group: ";
+                    for (auto& _ : lucky) {
+                        std::cout << data[_][0] << " ";
+                    }
+                    std::cout << std::endl;
+                    #endif
+                }
+            }
+        }
+        skylines[i][0] = layer_size;
+        if (layer_size == 0) {
+            ans = i;
+            break;
+        }
+    }
+    #ifdef DBG_PP
+    std::cout << "Skylines: " << std::endl;
+    for (sint i = 0; i < ans; ++ i) {
+        for (sint j = 1; j <= skylines[i][0]; ++ j) {
+            std::cout << data[skylines[i][j]][0] << " ";
+        }
+        std::cout << std::endl;
+    }
+    #endif
+    return ans;
+}
+
+/*
  * Input:  skylines, [[]], id in sorted data
  *         graph, DSG
  *         k, group size, literaly
@@ -308,9 +366,9 @@ sint pre_processing(std::vector<std::vector<Type>>& data,
 template <typename Type>
 void point_wise_gs(std::vector<std::vector<Type>>& data, 
     IMAP& skylines, DSG& graph, 
-    ISETS& groups, sint k) {
+    AnsGroups& groups, sint k) {
     // pre-processing
-    sint sky_k = pre_processing(data, skylines, graph, groups, k);
+    sint sky_k = _pre_processing_(data, skylines, graph, groups, k);
     #ifdef DBG_PW
     std::cout << "sky_k = " << sky_k << std::endl;
     #endif
@@ -345,7 +403,7 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
     // IMAP statuss[k - 2];
     ISETS childrens[k - 2];
     #ifdef DBG_PW
-    std::cout << (*ref_prestatus).size() << std::endl;
+    std::cout << "skyline size = " << (*ref_prestatus).size() << std::endl;
     #endif
     for (sint i = 1; i < k - 1; ++ i) {
         ISETS* cur = &curs[i - 1];
@@ -379,8 +437,11 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
                         }
                     }
                     if (flag) {
-                        (*cur).push_back((*ref_pre)[j]);
-                        (*cur)[(*cur).size() - 1].insert(lp_elem);
+                        std::unordered_set<int> c_set((*ref_pre)[j]);
+                        c_set.insert(lp_elem);
+                        (*cur).push_back(c_set);
+                        // (*cur).push_back((*ref_pre)[j]);
+                        // (*cur)[(*cur).size() - 1].insert(lp_elem);
 
                         // (*cur_status).push_back({ layer, (int)p });
                         if (cur_status_size <= cur_set_size) {
@@ -391,17 +452,25 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
                             // (*ref_curstatus).push_back(a_vec);
                             (*ref_curstatus).push_back({ _max_(last_layer, (int)tl), (int)p });
                         } else {
-                            std::vector<int>& a_vec = (*ref_curstatus)[cur_set_size];
-                            a_vec[0] = _max_(last_layer, (int)tl);
-                            a_vec[1] = p;
+                            // too much references, will be in trouble !!!
+                            // std::vector<int>& a_vec = (*ref_curstatus)[cur_set_size];
+                            // a_vec[0] = _max_(last_layer, (int)tl);
+                            // a_vec[1] = p;
+
+                            // change it
+                            (*ref_curstatus)[cur_set_size][0] = _max_(last_layer, (int)tl);
+                            (*ref_curstatus)[cur_set_size][1] = p;
+
                             // std::copy((*ref_prestatus)[j].begin(), (*ref_prestatus)[j].end(), a_vec.begin());
                             // a_vec[tl + 1] = p;
                             // a_vec[0] = _max_(a_vec[0], tl + 1);
                         }
                         cur_set_size ++;
 
-                        (*cur_children).push_back((*ref_prechild)[j]);
-                        (*cur_children)[(*cur_children).size() - 1].insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
+                        std::unordered_set<int> a_set((*ref_prechild)[j]);
+                        a_set.insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
+                        (*cur_children).push_back(a_set);
+                        // (*cur_children)[(*cur_children).size() - 1].insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
                     }
                 }
             }
@@ -415,10 +484,10 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
         ref_prechild = cur_children;
     }
     // generate groups (k)
-    #ifdef DBG_PW
-    std::cout << "Last - 1 : " << (*ref_prestatus).size() << std::endl;
-    #endif
     sets_size = (*ref_pre).size();
+    #ifdef DBG_PW
+    std::cout << "Last - 1 : group size = " << sets_size << "  status size = " << (*ref_prestatus).size() << "  children size =  " << (*ref_prechild).size() << std::endl;
+    #endif
     for (sint j = 0; j < sets_size; ++ j) {
         int last_layer = (*ref_prestatus)[j][0];
         max_layer = _min_(last_layer + 1, sky_k - 1);
@@ -430,7 +499,7 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
             posit = (tl == last_layer) ? (*ref_prestatus)[j][1] : 0;
             // at layer
             layer_size = skylines[layer][0];
-            for (p = posit + 1; p <= layer_size; ++ p) {              
+            for (p = posit + 1; p <= layer_size; ++ p) { 
                 lp_elem = skylines[layer][p];
                 if ((*ref_prechild)[j].size() > 0 &&
                     (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end() &&
@@ -445,8 +514,29 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
                     }
                 }
                 if (flag) {
-                    groups.push_back((*ref_pre)[j]);
-                    groups[groups.size() - 1].insert(lp_elem);
+                    // groups.push_back((*ref_pre)[j]);
+                    // groups[groups.size() - 1].insert(lp_elem);
+                    #ifdef DBG_PW
+                    if (j == 50221 && p == 286) 
+                        std::cout << "alloc a set begin" << std::endl;
+                    #endif 
+                    std::unordered_set<int> a_set((*ref_pre)[j]);
+                    #ifdef DBG_PW
+                    if (j == 50221 && p == 286) 
+                        std::cout << "aclloc a set done" << std::endl;
+                    #endif 
+                    a_set.insert(lp_elem);
+                    #ifdef DBG_PW
+                    if (j == 50221 && p == 286) {
+                        std::cout << "insert done" << std::endl;
+                        std::cout << groups.size() << std::endl;
+                    }
+                    #endif 
+                    groups.push_back(a_set);
+                    #ifdef DBG_PW
+                    if (j == 50221 && p == 286) 
+                        std::cout << "push_back done" << std::endl;
+                    #endif 
                 }
             }
         }

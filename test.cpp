@@ -21,7 +21,7 @@ TEST_CASE("test read data from file", "[gskits.hpp] read_data") {
 
 TEST_CASE("test combinatins", "[GSKits.hpp] c_combination") {
     int a = 100, b = 3;
-    c_combination(a, b);
+    // c_combination(a, b);
 }
 
 TEST_CASE("ohters", "[]") {
@@ -108,4 +108,17 @@ TEST_CASE("ohters", "[]") {
     });
     std::cout << copy_vec[0] << "," << copy_vec[1] << "," << copy_vec[2] << std::endl;
     std::cout << "Test AC" << std::endl;
+}
+
+TEST_CASE("test class", "abc") {
+    AnsGroups group;
+    sint index = 0;
+    std::cout << "size = " << group.size() << std::endl;
+    std::unordered_set<int> a( {1, 2} );
+    group.push_back(a);
+    std::cout << "size = " << group.size() << std::endl;
+    std::cout << "3 in set ? " << (group[index].find(3) == group[index].end()) << std::endl;
+    std::unordered_set<int> b(group[index]);
+    b.insert(3);
+    std::cout << "b size = " << b.size() << " size = " << group[index].size() << std::endl;
 }

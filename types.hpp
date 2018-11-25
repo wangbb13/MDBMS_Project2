@@ -53,6 +53,17 @@ public:
         
     }
 
+    std::unordered_set<int>* get(sint i) {
+        if (i < total_size) {
+            sint h = i / block;
+            sint w = i % block;
+            ISETS* r_data = all_group[h];
+            std::unordered_set<int>* ans = &((*r_data)[w]);
+            return ans;
+        }
+        return NULL;
+    }
+
     sint size() {
         return total_size;
     }
@@ -68,6 +79,15 @@ public:
             offset = 0;
         }
         (*(all_group[row]))[offset ++] = item;
+    }
+
+    std::unordered_set<int>& operator [] (sint i) {
+        std::unordered_set<int>* item = get(i);
+        if (item != NULL) 
+            return *item;
+        std::unordered_set<int> temp;
+        std::unordered_set<int>& ans = temp;
+        return ans;
     }
 
     void flush(const char* filename, const std::vector<int>& map_f) {
@@ -96,5 +116,62 @@ public:
             fout << "\n";
         }
         fout.close();
+    }
+};
+
+class Matrix {
+private:
+    sint total_size;
+    sint row;
+    sint offset;
+    sint block;
+    std::vector<IMAP*> mat;
+
+public:
+    Matrix() {
+        total_size = 0;
+        row = 0;
+        offset = 0;
+        block = 100000;
+    }
+    ~Matrix() {
+
+    }
+
+    sint size() {
+        return total_size;
+    }
+
+    std::vector<int>* get(sint i) {
+        if (i < total_size) {
+            sint h = i / block;
+            sint w = i % block;
+            IMAP* r_data = mat[h];
+            std::vector<int>* ans = &((*r_data)[w]);
+            return ans;
+        }
+        return NULL;
+    }
+
+    void push_back(std::vector<int>& item) {
+        total_size ++;
+        if (mat.size() == 0) {
+            mat.push_back(new IMAP(block));
+        }
+        if (offset == block) {
+            mat.push_back(new IMAP(block));
+            row ++;
+            offset = 0;
+        }
+        (*(mat[row]))[offset ++] = item;
+    }
+
+    std::vector<int>& operator [] (sint i) {
+        std::vector<int>* item = get(i);
+        if (item != NULL)
+            return *item;
+        std::vector<int> temp;
+        std::vector<int>& ans = temp;
+        return ans;
     }
 };

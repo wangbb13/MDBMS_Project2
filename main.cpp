@@ -51,27 +51,18 @@ int main(int argc, char const *argv[])
     std::cout << "[Function build_dsg] \t running time: " << duration.count() << " us" << std::endl;
     alg_time += duration.count();
 
+    // construct map function
+    sint data_size = origin_data.size();
+    std::vector<int> map_f(data_size);
+    for (sint i = 0; i < data_size; ++ i) 
+        map_f[i] = (int)origin_data[i][0];
+
     start = high_resolution_clock::now();
-    ISETS groups;
+    AnsGroups groups;
     if (code == 0)
         base_line(origin_data, skylines, graph, groups, k);
-    else if (code == 1) {
-        sint data_size = origin_data.size();
-        std::vector<int> map_f(data_size);
-        for (sint i = 0; i < data_size; ++ i) 
-            map_f[i] = (int)origin_data[i][0];
-        AnsGroups a_groups;
-        point_wise_gs(origin_data, skylines, graph, a_groups, k);
-        stop = high_resolution_clock::now();
-        duration = duration_cast<microseconds>(stop - start);
-        std::cout << "[Algorithm " << algorithms[code] << "] \t running time: " << duration.count() << " us" << std::endl;
-        alg_time += duration.count();
-
-        a_groups.flush(output_file, map_f);
-
-        std::cout << "[Total] \t\t running time: " << alg_time << "us" << std::endl;
-        return 0;
-    }
+    else if (code == 1)
+        point_wise_gs(origin_data, skylines, graph, groups, k);
     else
         unit_group_gs(origin_data, skylines, graph, groups, k);
     stop = high_resolution_clock::now();
@@ -79,7 +70,7 @@ int main(int argc, char const *argv[])
     std::cout << "[Algorithm " << algorithms[code] << "] \t running time: " << duration.count() << " us" << std::endl;
     alg_time += duration.count();
 
-    save_groups(output_file, groups, origin_data);
+    groups.flush(output_file, map_f);
 
     std::cout << "[Total] \t\t running time: " << alg_time << "us" << std::endl;
     return 0;

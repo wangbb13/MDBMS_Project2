@@ -249,64 +249,6 @@ void build_dsg(std::vector<std::vector<Type>>& data,
 template <typename Type>
 sint pre_processing(std::vector<std::vector<Type>>& data, 
     IMAP& skylines, DSG& graph,
-    ISETS& groups, sint k) {
-    sint ans = skylines.size();
-    sint sky_k = ans;
-    int ij_elem, ij_size, temp, layer_size;
-    #ifdef DBG_PP
-    std::cout << "[Function Pre_Processing]" << std::endl;
-    #endif
-    for (sint i = 1; i < sky_k; ++ i) {
-        layer_size = skylines[i][0];
-        for (sint j = 1; j > 0 && j <= layer_size; ++ j) {
-            ij_elem = skylines[i][j];
-            ij_size = graph.parents[ij_elem].size() + 1;
-            if (ij_size >= k) {
-                temp = skylines[i][j];
-                skylines[i][j] = skylines[i][layer_size];
-                skylines[i][layer_size] = temp;
-                layer_size --;
-                j --;
-                if (ij_size == k) {
-                    std::unordered_set<int> lucky = graph.parents[ij_elem];
-                    lucky.insert(ij_elem);
-                    groups.push_back(lucky);
-                    #ifdef DBG_PP
-                    std::cout << "lucky group: ";
-                    for (auto& _ : lucky) {
-                        std::cout << data[_][0] << " ";
-                    }
-                    std::cout << std::endl;
-                    #endif
-                }
-            }
-        }
-        skylines[i][0] = layer_size;
-        if (layer_size == 0) {
-            ans = i;
-            break;
-        }
-    }
-    #ifdef DBG_PP
-    std::cout << "Skylines: " << std::endl;
-    for (sint i = 0; i < ans; ++ i) {
-        for (sint j = 1; j <= skylines[i][0]; ++ j) {
-            std::cout << data[skylines[i][j]][0] << " ";
-        }
-        std::cout << std::endl;
-    }
-    #endif
-    return ans;
-}
-
-/*
- * Input:  as below
- * Output: as below
- * Return: last skyline
- */
-template <typename Type>
-sint _pre_processing_(std::vector<std::vector<Type>>& data, 
-    IMAP& skylines, DSG& graph,
     AnsGroups& groups, sint k) {
     sint ans = skylines.size();
     sint sky_k = ans;
@@ -368,7 +310,7 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
     IMAP& skylines, DSG& graph, 
     AnsGroups& groups, sint k) {
     // pre-processing
-    sint sky_k = _pre_processing_(data, skylines, graph, groups, k);
+    sint sky_k = pre_processing(data, skylines, graph, groups, k);
     #ifdef DBG_PW
     std::cout << "sky_k = " << sky_k << std::endl;
     #endif
@@ -552,7 +494,7 @@ void point_wise_gs(std::vector<std::vector<Type>>& data,
 template <typename Type>
 void unit_group_gs(std::vector<std::vector<Type>>& data,
     IMAP& skylines, DSG& graph, 
-    ISETS& groups, sint k) {
+    AnsGroups& groups, sint k) {
     // pre-processing
     sint sky_k = pre_processing(data, skylines, graph, groups, k);
     #ifdef DBG_UGW
@@ -680,7 +622,7 @@ void unit_group_gs(std::vector<std::vector<Type>>& data,
 template <typename Type>
 void base_line(std::vector<std::vector<Type>>& data,
     IMAP& skylines, DSG& graph, 
-    ISETS& groups, sint k) {
+    AnsGroups& groups, sint k) {
     // pre-processing
     sint sky_k = pre_processing(data, skylines, graph, groups, k);
     sint points_number = 0, alayer_size;

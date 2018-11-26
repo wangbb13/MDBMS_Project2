@@ -64,7 +64,7 @@ public:
         
     }
 
-    void enableFlush(const char* flushfile, const std::vector<int>& _map_f_) {
+    void enableFlush(const char* flushfile, std::vector<int>& _map_f_) {
         filename = flushfile;
         map_f = &_map_f_;
         flush_able = true;
@@ -128,7 +128,7 @@ public:
             ISETS* data = all_group[i];
             for (auto& row : (*data)) {
                 for (auto& e : row) {
-                    fout << map_f[e] << " ";
+                    fout << (*map_f)[e] << " ";
                 }
                 fout << "\n";
             }
@@ -138,7 +138,7 @@ public:
             if (row.size() == 0) 
                 break;
             for (auto& e : row) {
-                fout << map_f[e] << " ";
+                fout << (*map_f)[e] << " ";
             }
             fout << "\n";
         }

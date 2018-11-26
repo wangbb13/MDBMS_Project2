@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <vector>
 #include <queue>
+#include <stack>
 #include <fstream>
 
 #define _max_(a, b) ((a) > (b) ? (a) : (b))

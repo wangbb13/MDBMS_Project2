@@ -122,3 +122,13 @@ TEST_CASE("test class", "abc") {
     b.insert(3);
     std::cout << "b size = " << b.size() << " size = " << group[index].size() << std::endl;
 }
+
+TEST_CASE("test stack", "abc") {
+    std::stack<std::vector<int>> my_stack;
+    my_stack.push( { 1, 2, 3 } );
+    std::cout << "stack size = " << my_stack.size() << std::endl;
+    std::vector<int> fetch = my_stack.top();
+    my_stack.pop();
+    fetch.push_back(4);
+    std::cout << "stack size = " << my_stack.size() << " fetch size = " << fetch.size() << std::endl;
+}

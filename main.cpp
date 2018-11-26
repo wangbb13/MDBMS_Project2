@@ -11,7 +11,7 @@ using namespace std::chrono;
 int main(int argc, char const *argv[])
 {
     if (argc != 5) {
-        std::cout << "Usage: ./main input-filename output-filename k alg-code\n0: baseline, 1: point-wise, 2: unit-group-wise" << std::endl;
+        std::cout << "Usage: ./main input-filename output-filename k alg-code\n0: baseline, 1: point-wise, 2: unit-group-wise, 3 UWise-DFS" << std::endl;
         return 0;
     }
     const char* input_file = argv[1];
@@ -22,8 +22,8 @@ int main(int argc, char const *argv[])
     // algorithm 
     sint k = string_to_num<sint>(strk);
     int code = string_to_num<int>(stra);
-    if (code != 0 && code != 1 && code != 2) {
-        std::cout << "Algorithm code should be 0, 1, or 2" << std::endl;
+    if (!(code >= 0 && code < 4)) {
+        std::cout << "Algorithm code should be 0, 1, 2, or 3" << std::endl;
         return 0;
     }
 
@@ -63,8 +63,10 @@ int main(int argc, char const *argv[])
         base_line(origin_data, skylines, graph, groups, k);
     else if (code == 1)
         point_wise_gs(origin_data, skylines, graph, groups, k);
-    else
+    else if (code = 2)
         unit_group_gs(origin_data, skylines, graph, groups, k);
+    else 
+        uWiseDfs(origin_data, skylines, graph, groups, k);
     stop = high_resolution_clock::now();
     duration = duration_cast<microseconds>(stop - start);
     std::cout << "[Algorithm " << algorithms[code] << "] \t running time: " << duration.count() << " us" << std::endl;

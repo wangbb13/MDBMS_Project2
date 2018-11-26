@@ -625,6 +625,84 @@ void unit_group_gs(std::vector<std::vector<Type>>& data,
     }
 }
 
+/*
+ * Describe: Superset Pruning, Tail Set Prunning, 
+ *           Unit Group Reordering, Subset Pruning
+ * Input:  as above
+ * Output: as above
+ */
+template <typename Type>
+void uWiseDfs(std::vector<std::vector<Type>>& data,
+    IMAP& skylines, DSG& graph, 
+    AnsGroups& groups, sint k) {
+    // pre-processing
+    sint sky_k = pre_processing(data, skylines, graph, groups, k);
+    // 1. build unit groups, from tail to head 
+    sint points_number = 0, alayer_size, last_index;
+    int ij_elem;
+    for (sint i = 0; i < sky_k; ++ i) {
+        points_number += skylines[i][0];
+    }
+    std::vector<int> unit_groups(points_number);
+    points_number = 0;
+    for (sint i = 0; i < sky_k; ++ i) {
+        alayer_size = skylines[i][0];
+        for (sint j = 1; j <= alayer_size; ++ j) {
+            unit_groups[points_number ++] = skylines[i][j];
+        }
+    }
+    // 2. loop through 1-unit groups, from tail to head
+    std::unordered_set<int> g_last;
+    for (sint i = 0; i < k; ++ i) { // subset pruning
+        ij_elem = unit_groups[i];
+        g_last.insert(ij_elem);
+        g_last.insert(graph.parents[ij_elem].begin(), graph.parents[ij_elem].end());
+        if (g_last.size() == k) {
+            groups.push_back(g_last);
+            last_index = i;
+            break;
+        } else if (g_last.size() > k) {
+            last_index = i - 1;
+            break;
+        }
+    }
+    // build 1-unit group
+    std::stack<std::vector<int>> members;
+    for (sint i = last_index + 1; i < points_number; ++ i) {
+        members.push( { (int)i, unit_groups[i] } );
+    }
+    // dfs and prune
+    while (!members.empty()) {
+        std::vector<int> tMember = members.top();
+        members.pop();
+        std::unordered_set<int> ancestors;
+        // construct ancestors
+        sint tMLength = tMember.size();
+        for (sint i = 1; i < tMLength; ++ i) {
+            ancestors.insert(graph.parents[tMember[i]].begin(), graph.parents[tMember[i]].end());
+        }
+        // tranverse 
+        for (int j = tMember[0] - 1; j >= 0; -- j) {
+            ij_elem = unit_groups[j];
+            if (ancestors.empty() || ancestors.find(ij_elem) == ancestors.end()) {  // ij_elem not in ancestor set
+                std::unordered_set<int> item(ancestors);
+                item.insert(graph.parents[ij_elem].begin(), graph.parents[ij_elem].end());
+                sint sSize = item.size() + tMLength;
+                if (sSize == k) {
+                    item.insert(ij_elem);
+                    item.insert(tMember.begin() + 1, tMember.end());
+                    groups.push_back(item);
+                } else if (sSize < k) {
+                    std::vector<int> aVec(tMember.begin(), tMember.end());
+                    aVec.push_back(ij_elem);
+                    aVec[0] = j;
+                    members.push(aVec);
+                }
+            }
+        }
+    }
+}
+
 template <typename Type>
 void base_line(std::vector<std::vector<Type>>& data,
     IMAP& skylines, DSG& graph, 

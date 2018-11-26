@@ -60,6 +60,7 @@ int main(int argc, char const *argv[])
     // algorithms
     start = high_resolution_clock::now();
     AnsGroups groups;
+    groups.enableFlush(output_file, map_f);
     if (code == 0)
         base_line(origin_data, skylines, graph, groups, k);
     else if (code == 1)
@@ -75,7 +76,7 @@ int main(int argc, char const *argv[])
     std::cout << "[Algorithm " << algorithms[code] << "] \t running time: " << duration.count() << " us" << std::endl;
     alg_time += duration.count();
 
-    groups.flush(output_file, map_f);
+    groups.flush();
 
     std::cout << "[Total] \t\t running time: " << alg_time << "us" << std::endl;
     return 0;

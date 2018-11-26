@@ -42,16 +42,32 @@ private:
     sint offset;
     std::vector<ISETS*> all_group;
     sint block;
+    
+    sint flush_threshold;
+    bool flush_able;
+    bool has_flush;
+    const char* filename;
+    std::vector<int>* map_f;
 
 public:
-    AnsGroups() {
+    AnsGroups(int _block_ = 100000, int _thre_ = 10) {
         total_size = 0;
         row = 0;
         offset = 0;
-        block = 100000;
+        block = _block_;
+        
+        flush_threshold = _thre_;
+        flush_able = false;
+        has_flush = false;
     }
     ~AnsGroups() {
         
+    }
+
+    void enableFlush(const char* flushfile, const std::vector<int>& _map_f_) {
+        filename = flushfile;
+        map_f = &_map_f_;
+        flush_able = true;
     }
 
     std::unordered_set<int>* get(sint i) {
@@ -75,8 +91,23 @@ public:
             all_group.push_back(new ISETS(block));
         }
         if (offset == (all_group[row])->size()) {
-            all_group.push_back(new ISETS(block));
             row ++;
+            
+            if (flush_able && row == flush_threshold) {
+                std::ofstream fout;
+                if (has_flush)
+                    fout.open(filename, std::ios_base::app);
+                else
+                    fout.open(filename);
+                write(fout);
+                for (sint i = 0; i < row; ++ i) 
+                    delete all_group[i];
+                all_group.clear();
+                row = 0;
+                has_flush = true;
+            }
+            
+            all_group.push_back(new ISETS(block));
             offset = 0;
         }
         (*(all_group[row]))[offset ++] = item;
@@ -91,12 +122,7 @@ public:
         return ans;
     }
 
-    void flush(const char* filename, const std::vector<int>& map_f) {
-        std::ofstream fout(filename);
-        if (!fout.is_open()) {
-            std::cout << "can not open file " << filename << std::endl;
-            return;
-        }
+    void write(std::ofstream& fout) {
         sint group_size = all_group.size();
         for (sint i = 0; i < group_size - 1; ++ i) {
             ISETS* data = all_group[i];
@@ -117,6 +143,19 @@ public:
             fout << "\n";
         }
         fout.close();
+    }
+
+    void flush() {
+        std::ofstream fout(filename);
+        if (has_flush) 
+            fout.open(filename, std::ios_base::app);
+        else
+            fout.open(filename);
+        if (!fout.is_open()) {
+            std::cout << "can not open file " << filename << std::endl;
+            return;
+        }
+        write(fout);
     }
 };
 

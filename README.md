@@ -23,6 +23,12 @@ std::size_t p = N; p >= 0; --p
 
 
 
+##各分支的内容
+
+#### master
+
+貌似没有debug。。
+
 #### branch optimize_v1
 
 最基本的实现。

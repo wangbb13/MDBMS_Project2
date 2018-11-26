@@ -500,181 +500,59 @@ void PWiseDfs(std::vector<std::vector<Type>>& data,
     AnsGroups& groups, sint k) {
     // pre-processing
     sint sky_k = pre_processing(data, skylines, graph, groups, k);
-    #ifdef DBG_PW
-    std::cout << "sky_k = " << sky_k << std::endl;
-    #endif
-    int layer, posit, lp_elem, max_layer;
+    int layer, posit, lp_elem, max_layer, last_layer, last_posit;
     bool flag;
-    sint p, sets_size, layer_size, cur_set_size, cur_status_size;
-    // next processing
-    // initiate groups size == 1
-    AnsGroups pre;
-    Matrix pre_status, cur_status;
-    AnsGroups pre_children;
+    sint p, layer_size;
+    // DFS
+    std::stack<std::unordered_set<int>> members;
+    std::stack<std::vector<int>> status;
     layer_size = skylines[0][0];
     for (sint i = 1; i <= layer_size; ++ i) {
-        lp_elem = skylines[0][i];
-        std::unordered_set<int> x_set({ lp_elem });
-        pre.push_back( x_set );
-        // std::vector<int> a_vec(sky_k + 1, 0);
-        // a_vec[0] = 1;
-        // a_vec[1] = (int)i;
-        std::vector<int> x_vec({0, (int)i});
-        pre_status.push_back( x_vec );
-        // pre_status.push_back({ 0, (int)i });
-        pre_children.push_back( graph.children[lp_elem] );
+        members.push( { skylines[0][i] } );
+        status.push( { 0, (int)i } );
     }
-    cur_status_size = pre_status.size();
-    // references
-    AnsGroups* ref_pre = &pre;
-    Matrix* ref_prestatus = &pre_status;
-    Matrix* ref_curstatus = &cur_status;
-    Matrix* ref_statustmp;
-    AnsGroups* ref_prechild = &pre_children;
-
-    AnsGroups curs[k - 2];
-    // IMAP statuss[k - 2];
-    AnsGroups childrens[k - 2];
-    #ifdef DBG_PW
-    std::cout << "skyline size = " << (*ref_prestatus).size() << std::endl;
-    #endif
-    for (sint i = 1; i < k - 1; ++ i) {
-        AnsGroups* cur = &curs[i - 1];
-        // IMAP* cur_status = &statuss[i - 1];
-        cur_status_size = (*ref_curstatus).size();
-        cur_set_size = 0;
-        AnsGroups* cur_children = &childrens[i - 1];
-        sets_size = (*ref_pre).size();
-        for (sint j = 0; j < sets_size; ++ j) { // select a group (i) ref_pre[j]
-            int last_layer = (*ref_prestatus)[j][0];
-            max_layer = _min_(last_layer + 1, sky_k - 1);
-            for (sint tl = last_layer; tl <= max_layer; ++ tl) {
-                // layer = (*ref_prestatus)[j][0];
-                layer = tl;
-                // posit = (*ref_prestatus)[j][1];
-                posit = (tl == last_layer) ? (*ref_prestatus)[j][1] : 0;
-                // at layer
-                layer_size = skylines[layer][0];
-                for (p = posit + 1; p <= layer_size; ++ p) {
-                    lp_elem = skylines[layer][p];
-                    if ((*ref_prechild)[j].size() > 0 &&
-                        (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end() &&
-                        layer > 0) { // not in children set or in skyline
-                        continue;
-                    }
-                    flag = true;
-                    for (auto& anc : graph.parents[lp_elem]) {  // verify group (i+1), all its parents in it
-                        if ((*ref_pre)[j].find(anc) == (*ref_pre)[j].end()) {
-                            flag = false;
-                            break;
-                        }
-                    }
-                    if (flag) {
-                        std::unordered_set<int> c_set((*ref_pre)[j]);
-                        c_set.insert(lp_elem);
-                        (*cur).push_back(c_set);
-                        // (*cur).push_back((*ref_pre)[j]);
-                        // (*cur)[(*cur).size() - 1].insert(lp_elem);
-
-                        // (*cur_status).push_back({ layer, (int)p });
-                        if (cur_status_size <= cur_set_size) {
-                            // std::vector<int> a_vec(sky_k + 1);
-                            // std::copy((*ref_prestatus)[j].begin(), (*ref_prestatus)[j].end(), a_vec.begin());
-                            // a_vec[tl + 1] = p;
-                            // a_vec[0] = _max_(a_vec[0], tl + 1);
-                            // (*ref_curstatus).push_back(a_vec);
-                            std::vector<int> x_vec({ _max_(last_layer, (int)tl), (int)p });
-                            (*ref_curstatus).push_back( x_vec );
-                        } else {
-                            // too much references, will be in trouble !!!
-                            // std::vector<int>& a_vec = (*ref_curstatus)[cur_set_size];
-                            // a_vec[0] = _max_(last_layer, (int)tl);
-                            // a_vec[1] = p;
-
-                            // change it
-                            (*ref_curstatus)[cur_set_size][0] = _max_(last_layer, (int)tl);
-                            (*ref_curstatus)[cur_set_size][1] = p;
-
-                            // std::copy((*ref_prestatus)[j].begin(), (*ref_prestatus)[j].end(), a_vec.begin());
-                            // a_vec[tl + 1] = p;
-                            // a_vec[0] = _max_(a_vec[0], tl + 1);
-                        }
-                        cur_set_size ++;
-
-                        std::unordered_set<int> a_set((*ref_prechild)[j]);
-                        a_set.insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
-                        (*cur_children).push_back(a_set);
-                        // (*cur_children)[(*cur_children).size() - 1].insert(graph.children[lp_elem].begin(), graph.children[lp_elem].end());
-                    }
-                }
-            }
-        }
-        ref_pre = cur;
-        // ref_prestatus = cur_status;
-        ref_statustmp = ref_prestatus;
-        ref_prestatus = ref_curstatus;
-        ref_curstatus = ref_statustmp;
-        
-        ref_prechild = cur_children;
-    }
-    // generate groups (k)
-    sets_size = (*ref_pre).size();
-    #ifdef DBG_PW
-    std::cout << "Last - 1 : group size = " << sets_size << "  status size = " << (*ref_prestatus).size() << "  children size =  " << (*ref_prechild).size() << std::endl;
-    #endif
-    for (sint j = 0; j < sets_size; ++ j) {
-        int last_layer = (*ref_prestatus)[j][0];
+    while (!members.empty()) {
+        std::unordered_set<int> tItem = members.top();
+        members.pop();
+        last_layer = status.top()[0];
+        last_posit = status.top()[1];
+        status.pop();
         max_layer = _min_(last_layer + 1, sky_k - 1);
+        // consturct children set
+        std::unordered_set<int> cSet;
+        for (auto& _ : tItem) 
+            cSet.insert(graph.children[_].begin(), graph.children[_].end());
+        // tranverse 
         for (sint tl = last_layer; tl <= max_layer; ++ tl) {
-            // layer = (*ref_prestatus)[j][0];
             layer = tl;
-            // posit = (*ref_prestatus)[j][1];
-            // posit = (*ref_prestatus)[j][tl + 1];
-            posit = (tl == last_layer) ? (*ref_prestatus)[j][1] : 0;
-            // at layer
+            posit = (tl == last_layer) ? (last_posit) : 0;
             layer_size = skylines[layer][0];
-            for (p = posit + 1; p <= layer_size; ++ p) { 
+            for (p = posit + 1; p <= layer_size; ++ p) {
                 lp_elem = skylines[layer][p];
-                if ((*ref_prechild)[j].size() > 0 &&
-                    (*ref_prechild)[j].find(lp_elem) == (*ref_prechild)[j].end() &&
-                    layer > 0) { // not in children set
+                if (cSet.size() > 0 && cSet.find(lp_elem) == cSet.end() &&
+                    layer > 0) {  // not in children set or in skyline
                     continue;
                 }
                 flag = true;
-                for (auto& anc : graph.parents[lp_elem]) {
-                    if ((*ref_pre)[j].find(anc) == (*ref_pre)[j].end()) {
+                for (auto& _ : graph.parents[lp_elem]) { // verify it
+                    if (tItem.find(_) == tItem.end()) {
                         flag = false;
                         break;
                     }
                 }
-                if (flag) {
-                    // groups.push_back((*ref_pre)[j]);
-                    // groups[groups.size() - 1].insert(lp_elem);
-                    #ifdef DBG_PW
-                    if (j == 50221 && p == 286) 
-                        std::cout << "alloc a set begin" << std::endl;
-                    #endif 
-                    std::unordered_set<int> a_set((*ref_pre)[j]);
-                    #ifdef DBG_PW
-                    if (j == 50221 && p == 286) 
-                        std::cout << "aclloc a set done" << std::endl;
-                    #endif 
-                    a_set.insert(lp_elem);
-                    #ifdef DBG_PW
-                    if (j == 50221 && p == 286) {
-                        std::cout << "insert done" << std::endl;
-                        std::cout << groups.size() << std::endl;
+                if (flag) { // legal
+                    std::unordered_set<int> aSet(tItem);
+                    aSet.insert(lp_elem);
+                    if (tItem.size() + 1 == k) { // find one
+                        groups.push_back(aSet);
+                    } else { // subset
+                        members.push(aSet);
+                        status.push( { (int)tl, (int)p } );
                     }
-                    #endif 
-                    groups.push_back(a_set);
-                    #ifdef DBG_PW
-                    if (j == 50221 && p == 286) 
-                        std::cout << "push_back done" << std::endl;
-                    #endif 
                 }
             }
         }
-    } // end groups (k)
+    } // end dfs
 }
 
 /*

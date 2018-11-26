@@ -21,3 +21,25 @@ std::size_t p = N; p >= 0; --p
 
 1、不要创建一个set或vector再插入；（需要验证是否有效）
 
+
+
+#### branch optimize_v1
+
+最基本的实现。
+
+#### branch optimize_v2
+
+```c++
+vector.push_back
+AllGroups.push_back
+Matrix.push_back
+```
+
+#### branch optimize_v3
+
+BFS  ->  DFS
+
+#### branch optimize_v4
+
+在算法执行过程中将已算出的结果写入磁盘。
+

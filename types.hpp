@@ -146,7 +146,7 @@ public:
     }
 
     void flush() {
-        std::ofstream fout(filename);
+        std::ofstream fout;
         if (has_flush) 
             fout.open(filename, std::ios_base::app);
         else

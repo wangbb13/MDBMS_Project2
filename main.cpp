@@ -11,14 +11,14 @@ using namespace std::chrono;
 int main(int argc, char const *argv[])
 {
     if (argc != 5) {
-        std::cout << "Usage: ./main input-filename output-filename k alg-code\n0: baseline, 1: point-wise, 2: unit-group-wise, 3: UWise-DFS, 4: PWise-DFS" << std::endl;
+        std::cout << "Usage: ./main input-filename output-filename k alg-code\n0: baseline, 1: point-wise, 2: unit-group-wise+, 3: PWise-DFS, 4: UWise+-DFS" << std::endl;
         return 0;
     }
     const char* input_file = argv[1];
     const char* output_file = argv[2];
     std::string strk = argv[3];
     std::string stra = argv[4];
-    std::string algorithms[5] = { "BaseLine", "PWise[BFS]", "UWise[BFS]", "UWise[DFS]", "PWise[DFS]" };
+    std::string algorithms[5] = { "BaseLine", "PWise[BFS]", "UWise+[BFS]", "PWise[DFS]", "UWise+[DFS]" };
     // algorithm 
     sint k = string_to_num<sint>(strk);
     int code = string_to_num<int>(stra);
@@ -68,9 +68,9 @@ int main(int argc, char const *argv[])
     else if (code == 2)
         unit_group_gs(origin_data, skylines, graph, groups, k);
     else if (code == 3)
-        UWiseDfs(origin_data, skylines, graph, groups, k);
-    else
         PWiseDfs(origin_data, skylines, graph, groups, k);
+    else
+        UWiseDfs(origin_data, skylines, graph, groups, k);
     stop = high_resolution_clock::now();
     duration = duration_cast<microseconds>(stop - start);
     std::cout << "[Algorithm " << algorithms[code] << "] \t running time: " << duration.count() << " us" << std::endl;
